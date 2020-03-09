@@ -3,32 +3,26 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"log"
-
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 )
 
-type Response struct {
-	StatusCode int    `json:"statusCode"`
-	Body       string `json:"body"`
-}
-
-type Model struct {
+type Request struct {
 	Name string `json:"name"`
 }
 
+type Response struct {
+	Result string `json:"name"`
+}
+
 func HandleRequest(_ context.Context, event events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	var m Model
+	var req Request
+	_ = json.Unmarshal([]byte(event.Body), &req)
 
-	err := json.Unmarshal([]byte(event.Body), &m)
-	if err != nil {
-		log.Fatal("err: ", err)
-	}
+	result := "Name was: " + req.Name
 
-	m.Name = "Name is " + m.Name
+	b, _ := json.Marshal(Response{Result: result})
 
-	b, _ := json.Marshal(m)
 	return events.APIGatewayProxyResponse{
 		StatusCode: 200,
 		Body:       string(b),
