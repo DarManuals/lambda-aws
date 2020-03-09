@@ -12,7 +12,7 @@ type Request struct {
 }
 
 type Response struct {
-	Result string `json:"name"`
+	Result string `json:"result"`
 }
 
 func HandleRequest(_ context.Context, event events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
