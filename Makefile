@@ -1,4 +1,4 @@
 build:
 	go build main.go
-	zip function.zip main
-	mv function.zip ~/Downloads/
+	zip lambda.zip main
+	rm main
