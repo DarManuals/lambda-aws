@@ -8,9 +8,20 @@ provider "aws" {
   region  = var.region
 }
 
-resource "null_resource" "sh1" {
+resource "null_resource" "sh0" {
   triggers = {
     created_at = timestamp()
+  }
+  provisioner "local-exec" {
+    working_dir = "tmp"
+    command     = "rm -rvf code; git clone git@github.com:${var.github_repo}.git code"
+  }
+}
+
+resource "null_resource" "sh1" {
+  triggers = {
+    repo_changed = null_resource.sh0.id
+    created_at   = timestamp()
   }
   provisioner "local-exec" {
     command = "make"
@@ -32,7 +43,7 @@ resource "null_resource" "sh2" {
     lambda  = module.lambda.hash
   }
   provisioner "local-exec" {
-    command = "rm ${var.file_name}"
+    command = "rm ${var.file_name}; rm -rvf tmp/*"
   }
 }
 
@@ -45,6 +56,10 @@ variable "profile" {}
 variable "region" {}
 variable "file_name" {
   default = "lambda.zip"
+}
+variable "github_repo" {
+  default     = "DarManuals/lambda-aws"
+  description = "github repo like: <user>/<repo_name>"
 }
 
 ### Out
