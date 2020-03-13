@@ -11,22 +11,39 @@ import (
 	botapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
 
-func HandleRequest(_ context.Context, event events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	token, _ := os.LookupEnv("BOT_TOKEN")
-	bot, err := botapi.NewBotAPI(token)
-	if err != nil {
-		fmt.Printf("ERROR: %v", err)
+var (
+	bot *botapi.BotAPI
+)
+
+func init() {
+	token, ok := os.LookupEnv("BOT_TOKEN")
+	if !ok {
+		fmt.Printf("ERROR: no token")
+		os.Exit(1)
 	}
 
+	var err error
+	bot, err = botapi.NewBotAPI(token)
+	if err != nil {
+		fmt.Printf("ERROR: %v", err)
+		os.Exit(2)
+	}
+}
+
+type Message struct {
+	m botapi.Message `json:"message"`
+}
+
+func HandleRequest(_ context.Context, event events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	fmt.Printf("INFO: fmt: GOT body: %+v", event.Body)
 
-	var msg botapi.Message
+	var msg Message
 	_ = json.Unmarshal([]byte(event.Body), &msg)
 
 	fmt.Printf("INFO: fmt: GOT msg: %+v", msg)
 
-	m := botapi.NewMessage(msg.Chat.ID, `echo: `+msg.Text)
-	_, err = bot.Send(m)
+	m := botapi.NewMessage(msg.m.Chat.ID, `echo: `+msg.m.Text)
+	_, err := bot.Send(m)
 	if err != nil {
 		fmt.Printf("ERROR: %v", err)
 	}
