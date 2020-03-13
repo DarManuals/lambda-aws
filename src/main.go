@@ -35,17 +35,21 @@ type Message struct {
 }
 
 func HandleRequest(_ context.Context, event events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	fmt.Printf("INFO: fmt: GOT body: %+v", event.Body)
+	fmt.Printf("INFO: fmt: GOT body: %q", event.Body)
 
 	var msg Message
-	_ = json.Unmarshal([]byte(event.Body), &msg)
+	if err := json.Unmarshal([]byte(event.Body), &msg); err != nil {
+		fmt.Printf("ERROR: %v", err)
+		return events.APIGatewayProxyResponse{StatusCode: 200}, nil
+	}
 
 	fmt.Printf("INFO: fmt: GOT msg: %+v", msg)
 
 	m := botapi.NewMessage(msg.m.Chat.ID, `echo: `+msg.m.Text)
-	_, err := bot.Send(m)
-	if err != nil {
+
+	if _, err := bot.Send(m); err != nil {
 		fmt.Printf("ERROR: %v", err)
+		return events.APIGatewayProxyResponse{StatusCode: 200}, nil
 	}
 
 	return events.APIGatewayProxyResponse{StatusCode: 200}, nil
