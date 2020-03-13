@@ -4,35 +4,32 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
+	"os"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
+	botapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
 
-type Request struct {
-	Name string `json:"name"`
-}
-
-type Response struct {
-	Result string `json:"result"`
-}
-
 func HandleRequest(_ context.Context, event events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	var req Request
-	_ = json.Unmarshal([]byte(event.Body), &req)
+	token, _ := os.LookupEnv("BOT_TOKEN")
+	bot, err := botapi.NewBotAPI(token)
+	if err != nil {
+		fmt.Printf("ERROR: %v", err)
+	}
 
-	result := "Name was: " + req.Name
+	var msg botapi.Message
+	_ = json.Unmarshal([]byte(event.Body), &msg)
 
-	log.Println("INFO: log: GOT payload: ", event.Body)
-	fmt.Println("INFO: fmt: GOT payload: ", event.Body)
+	fmt.Printf("INFO: fmt: GOT msg: %+v", msg)
 
-	b, _ := json.Marshal(Response{Result: result})
+	m := botapi.NewMessage(msg.Chat.ID, `echo: `+msg.Text)
+	_, err = bot.Send(m)
+	if err != nil {
+		fmt.Printf("ERROR: %v", err)
+	}
 
-	return events.APIGatewayProxyResponse{
-		StatusCode: 200,
-		Body:       string(b),
-	}, nil
+	return events.APIGatewayProxyResponse{StatusCode: 200}, nil
 }
 
 func main() {
