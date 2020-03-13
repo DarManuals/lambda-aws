@@ -30,22 +30,22 @@ func init() {
 	}
 }
 
-type Message struct {
-	m botapi.Message `json:"message"`
+type Payload struct {
+	Msg botapi.Message `json:"message"`
 }
 
 func HandleRequest(_ context.Context, event events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	fmt.Printf("INFO: fmt: GOT body: %q", event.Body)
 
-	var msg Message
-	if err := json.Unmarshal([]byte(event.Body), &msg); err != nil {
+	var payload Payload
+	if err := json.Unmarshal([]byte(event.Body), &payload); err != nil {
 		fmt.Printf("ERROR: %v", err)
 		return events.APIGatewayProxyResponse{StatusCode: 200}, nil
 	}
 
-	fmt.Printf("INFO: fmt: GOT msg: %+v", msg)
+	fmt.Printf("INFO: fmt: GOT payload: %+v", payload)
 
-	m := botapi.NewMessage(msg.m.Chat.ID, `echo: `+msg.m.Text)
+	m := botapi.NewMessage(payload.Msg.Chat.ID, `echo: `+payload.Msg.Text)
 
 	if _, err := bot.Send(m); err != nil {
 		fmt.Printf("ERROR: %v", err)
