@@ -18,6 +18,8 @@ func HandleRequest(_ context.Context, event events.APIGatewayProxyRequest) (even
 		fmt.Printf("ERROR: %v", err)
 	}
 
+	fmt.Printf("INFO: fmt: GOT body: %+v", event.Body)
+
 	var msg botapi.Message
 	_ = json.Unmarshal([]byte(event.Body), &msg)
 
