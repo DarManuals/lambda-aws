@@ -1,10 +1,11 @@
-package src
+package main
 
 import (
 	"context"
 	"encoding/json"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
+	"log"
 )
 
 type Request struct {
@@ -20,6 +21,8 @@ func HandleRequest(_ context.Context, event events.APIGatewayProxyRequest) (even
 	_ = json.Unmarshal([]byte(event.Body), &req)
 
 	result := "Name was: " + req.Name
+
+	log.Println("GOT payload: ", event.Body)
 
 	b, _ := json.Marshal(Response{Result: result})
 
