@@ -34,7 +34,12 @@ func (g GIF) String() string {
 }
 
 func getGif(name string) (*GIF, error) {
-	rsp, err := httpCli.Get(fmt.Sprintf(GIF_URL, strings.TrimSpace(name), gifToken))
+	name = strings.TrimSpace(name)
+	if len(name) == 0 {
+		name = "random"
+	}
+
+	rsp, err := httpCli.Get(fmt.Sprintf(GIF_URL, name, gifToken))
 	if err != nil {
 		return nil, err
 	}
