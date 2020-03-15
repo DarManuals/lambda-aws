@@ -4,7 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"os"
+	"strings"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
@@ -12,11 +14,18 @@ import (
 )
 
 var (
-	bot *botapi.BotAPI
+	bot          *botapi.BotAPI
+	weatherToken string
+	httpCli      = http.DefaultClient
 )
 
 func init() {
 	token, ok := os.LookupEnv("BOT_TOKEN")
+	if !ok {
+		fmt.Printf("ERROR: no token")
+		os.Exit(1)
+	}
+	weatherToken, ok = os.LookupEnv("WEATHER_TOKEN")
 	if !ok {
 		fmt.Printf("ERROR: no token")
 		os.Exit(1)
@@ -45,9 +54,18 @@ func HandleRequest(_ context.Context, event events.APIGatewayProxyRequest) (even
 
 	fmt.Printf("INFO: fmt: GOT payload: %+v", payload)
 
-	m := botapi.NewMessage(payload.Msg.Chat.ID, `echo: `+payload.Msg.Text)
+	var replyStr = `echo: ` + payload.Msg.Text // default
 
-	if _, err := bot.Send(m); err != nil {
+	if strings.HasPrefix(payload.Msg.Text, W_CMD) {
+		w, err := getWeather(strings.TrimPrefix(payload.Msg.Text, W_CMD))
+		if err != nil {
+			fmt.Printf("w err: %v", err)
+			return events.APIGatewayProxyResponse{StatusCode: 200}, nil
+		}
+		replyStr = w.String()
+	}
+
+	if _, err := bot.Send(botapi.NewMessage(payload.Msg.Chat.ID, replyStr)); err != nil {
 		fmt.Printf("ERROR: %v", err)
 		return events.APIGatewayProxyResponse{StatusCode: 200}, nil
 	}
