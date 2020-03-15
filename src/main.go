@@ -4,9 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
@@ -17,7 +19,9 @@ var (
 	bot          *botapi.BotAPI
 	weatherToken string
 	gifToken     string
-	httpCli      = http.DefaultClient
+	httpCli      = http.Client{
+		Timeout: time.Second,
+	}
 )
 
 func init() {
@@ -58,7 +62,7 @@ func HandleRequest(_ context.Context, event events.APIGatewayProxyRequest) (even
 		return events.APIGatewayProxyResponse{StatusCode: 200}, nil
 	}
 
-	fmt.Printf("INFO: fmt: GOT payload: %+v", payload)
+	fmt.Printf("INFO: fmt: GOT payload: %+v\n", payload)
 
 	var msg botapi.Chattable = botapi.NewMessage(payload.Msg.Chat.ID, `echo: `+payload.Msg.Text) // default
 
@@ -76,9 +80,21 @@ func HandleRequest(_ context.Context, event events.APIGatewayProxyRequest) (even
 			fmt.Printf("gif err: %v", err)
 			return events.APIGatewayProxyResponse{StatusCode: 200}, nil
 		}
-		url := gif.String()
-		fmt.Println("gif url: ", url)
-		msg = botapi.NewAnimationUpload(payload.Msg.Chat.ID, url)
+		gifURL := gif.String()
+		fmt.Printf("gif URL: %q\n", gifURL)
+
+		gifRsp, err := httpCli.Get(gifURL)
+		if err != nil {
+			fmt.Printf("gif fetch err: %v", err)
+			return events.APIGatewayProxyResponse{StatusCode: 200}, nil
+		}
+		defer gifRsp.Body.Close()
+
+		b, _ := ioutil.ReadAll(gifRsp.Body)
+		msg = botapi.NewAnimationUpload(payload.Msg.Chat.ID, botapi.FileBytes{
+			Name:  gifURL,
+			Bytes: b,
+		})
 	}
 
 	if _, err := bot.Send(msg); err != nil {
