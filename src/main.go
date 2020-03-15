@@ -76,7 +76,9 @@ func HandleRequest(_ context.Context, event events.APIGatewayProxyRequest) (even
 			fmt.Printf("gif err: %v", err)
 			return events.APIGatewayProxyResponse{StatusCode: 200}, nil
 		}
-		msg = botapi.NewAnimationUpload(payload.Msg.Chat.ID, gif.String())
+		url := gif.String()
+		fmt.Println("gif url: ", url)
+		msg = botapi.NewAnimationUpload(payload.Msg.Chat.ID, url)
 	}
 
 	if _, err := bot.Send(msg); err != nil {

@@ -26,11 +26,11 @@ func (g GIF) String() string {
 	if len(g.Results) < 1 || len(g.Results[0].Media) < 1 || len(g.Results[0].Media[0]) < 1 {
 		return "error"
 	}
-	media, ok := g.Results[0].Media[0]["gif"]
+	media, ok := g.Results[0].Media[0]["tinygif"]
 	if !ok {
 		return "nok"
 	}
-	return media.URL
+	return strings.TrimSpace(media.URL)
 }
 
 func getGif(name string) (*GIF, error) {
