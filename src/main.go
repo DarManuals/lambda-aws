@@ -16,6 +16,7 @@ import (
 var (
 	bot          *botapi.BotAPI
 	weatherToken string
+	gifToken     string
 	httpCli      = http.DefaultClient
 )
 
@@ -26,6 +27,11 @@ func init() {
 		os.Exit(1)
 	}
 	weatherToken, ok = os.LookupEnv("WEATHER_TOKEN")
+	if !ok {
+		fmt.Printf("ERROR: no token")
+		os.Exit(1)
+	}
+	gifToken, ok = os.LookupEnv("GIF_TOKEN")
 	if !ok {
 		fmt.Printf("ERROR: no token")
 		os.Exit(1)
@@ -54,7 +60,7 @@ func HandleRequest(_ context.Context, event events.APIGatewayProxyRequest) (even
 
 	fmt.Printf("INFO: fmt: GOT payload: %+v", payload)
 
-	var replyStr = `echo: ` + payload.Msg.Text // default
+	var msg botapi.Chattable = botapi.NewMessage(payload.Msg.Chat.ID, `echo: `+payload.Msg.Text) // default
 
 	if strings.HasPrefix(payload.Msg.Text, W_CMD) {
 		w, err := getWeather(strings.TrimPrefix(payload.Msg.Text, W_CMD))
@@ -62,10 +68,18 @@ func HandleRequest(_ context.Context, event events.APIGatewayProxyRequest) (even
 			fmt.Printf("w err: %v", err)
 			return events.APIGatewayProxyResponse{StatusCode: 200}, nil
 		}
-		replyStr = w.String()
+		msg = botapi.NewMessage(payload.Msg.Chat.ID, w.String())
+	}
+	if strings.HasPrefix(payload.Msg.Text, GIF_CMD) {
+		gif, err := getGif(strings.TrimPrefix(payload.Msg.Text, GIF_CMD))
+		if err != nil {
+			fmt.Printf("gif err: %v", err)
+			return events.APIGatewayProxyResponse{StatusCode: 200}, nil
+		}
+		msg = botapi.NewAnimationUpload(payload.Msg.Chat.ID, gif.String())
 	}
 
-	if _, err := bot.Send(botapi.NewMessage(payload.Msg.Chat.ID, replyStr)); err != nil {
+	if _, err := bot.Send(msg); err != nil {
 		fmt.Printf("ERROR: %v", err)
 		return events.APIGatewayProxyResponse{StatusCode: 200}, nil
 	}
